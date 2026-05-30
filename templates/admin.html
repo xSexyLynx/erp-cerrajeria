@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ERP | Centro de Mando IoT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+    
+    <nav class="navbar navbar-dark bg-black mb-4 border-bottom border-secondary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1 text-warning">🛡️ ERP Centro de Mando (Sistemas Distribuidos)</span>
+            <div class="d-flex">
+                <a href="/logout" class="btn btn-outline-danger fw-bold btn-sm">🚪 Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-secondary text-white shadow border-warning">
+                    <div class="card-header bg-black text-warning">
+                        <h5 class="mb-0">📡 Red IoT: Simulador de Kioscos</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-light">Simula una venta remota para probar la alerta central.</p>
+                        
+                        <label class="form-label">Seleccionar Nodo (Sucursal)</label>
+                        <select id="kioscoId" class="form-select mb-3 bg-dark text-white border-secondary">
+                            <option value="1">Kiosco 01 - Plaza Universidad</option>
+                            <option value="2">Kiosco 02 - Centro Coyoacán</option>
+                            <option value="3">Kiosco 03 - Galerías Insurgentes</option>
+                            <option value="4">Kiosco 04 - Plaza Satélite</option>
+                            <option value="5">Kiosco 05 - Mundo E</option>
+                            <option value="6">Kiosco 06 - Parque Delta</option>
+                            <option value="7">Kiosco 07 - Reforma 222</option>
+                            <option value="8">Kiosco 08 - Antara Polanco</option>
+                            <option value="9">Kiosco 09 - Plaza Carso</option>
+                            <option value="10">Kiosco 10 - Centro Santa Fe</option>
+                            <option value="11">Kiosco 11 - Paseo Interlomas</option>
+                            <option value="12">Kiosco 12 - Perisur</option>
+                            <option value="13">Kiosco 13 - Oasis Coyoacán</option>
+                            <option value="14">Kiosco 14 - Portal San Ángel</option>
+                            <option value="15">Kiosco 15 - Plaza Lindavista</option>
+                            <option value="16">Kiosco 16 - Parque Tezontle</option>
+                            <option value="17">Kiosco 17 - Plaza Central</option>
+                            <option value="18">Kiosco 18 - Encuentro Oceanía</option>
+                            <option value="19">Kiosco 19 - Forum Buenavista</option>
+                            <option value="20">Kiosco 20 - Gran Sur</option>
+                        </select>
+
+                        <label class="form-label">Modelo de Forja</label>
+                        <select id="modeloForja" class="form-select mb-3 bg-dark text-white border-secondary">
+                            <option value="R1">R1 (Estándar)</option>
+                            <option value="R52" selected>R52 (Alta Seguridad)</option>
+                            <option value="R55">R55 (Residencial)</option>
+                            <option value="E109">E109 (Automotriz)</option>
+                            <option value="T32">T32 (Buzón/Candado) - $20</option>
+                        </select>
+
+                        <label class="form-label">Unidades Vendidas</label>
+                        <input type="number" id="cantidadVendida" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="Ej. 5">
+
+                        <button class="btn btn-warning w-100 fw-bold text-dark" onclick="enviarAlertaIoT()">Transmitir al ERP Central</button>
+                        
+                        <div id="consolaAdmin" class="alert alert-dark mt-3" style="font-family: monospace; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card bg-secondary text-white shadow border-info">
+                    <div class="card-header bg-black text-info d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📊 Monitor Global de Nodos (Red IoT)</h5>
+                        <button class="btn btn-sm btn-outline-info fw-bold" onclick="cargarKioscos()">Actualizar Red</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-dark table-hover mb-0 text-center">
+                                <thead class="table-active border-info">
+                                    <tr>
+                                        <th>ID Nodo</th>
+                                        <th>Ubicación de Sucursal</th>
+                                        <th>Estatus de Red</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaKioscos">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card bg-secondary text-white shadow border-primary">
+                    <div class="card-header bg-black text-primary">
+                        <h5 class="mb-0">📈 Análisis de Ingresos por Sucursal (MXN)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="graficaVentas" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card bg-secondary text-white shadow border-success">
+                    <div class="card-header bg-black text-success">
+                        <h5 class="mb-0">🏭 Control de Taller Central (Producción)</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="text-light">Libera las máquinas de corte y marca todas las órdenes actuales como fabricadas.</p>
+                        <button class="btn btn-success fw-bold px-5 py-2 shadow" onclick="cerrarLoteTaller()">✅ Marcar Lote en Taller como "Terminado"</button>
+                        <div id="mensajeTaller" class="mt-3 fs-5 fw-bold" style="font-family: monospace;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // --- 1. SIMULADOR IOT ---
+        async function enviarAlertaIoT() {
+            const nodo = document.getElementById('kioscoId').value;
+            const modelo = document.getElementById('modeloForja').value; 
+            const cantidad = document.getElementById('cantidadVendida').value || 1;
+            const consola = document.getElementById('consolaAdmin');
+            
+            consola.style.display = 'block';
+            consola.innerHTML = "Estableciendo conexión TCP/IP...";
+
+            try {
+                const respuesta = await fetch('/api/kioscos/alerta', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id_kiosco: parseInt(nodo),
+                        modelo_forja: modelo, 
+                        cantidad_vendida: parseInt(cantidad)
+                    })
+                });
+                const data = await respuesta.json();
+                
+                if(data.estado === "Error") {
+                    consola.className = "alert alert-danger mt-3";
+                    consola.innerHTML = `<b>🚨 ERROR:</b> ${data.mensaje}`;
+                } else if(data.mensaje.includes("ALERTA")) {
+                    consola.className = "alert alert-warning text-dark mt-3";
+                    consola.innerHTML = `<b>⚠️ AVISO:</b> ${data.mensaje}`;
+                } else {
+                    consola.className = "alert alert-success mt-3";
+                    consola.innerHTML = `<b>✔️ Sincronizado:</b> ${data.mensaje}`;
+                }
+                
+                cargarKioscos(); 
+                actualizarGrafica();
+                
+            } catch (error) {
+                consola.className = "alert alert-danger mt-3";
+                consola.innerHTML = `Error de red: Nodo inalcanzable.`;
+            }
+        }
+
+        // --- 2. MONITOR GLOBAL BI ---
+        async function cargarKioscos() {
+            try {
+                const respuesta = await fetch('/api/kioscos/estado');
+                const data = await respuesta.json();
+                
+                if (data.estado === "Éxito") {
+                    const tbody = document.getElementById('tablaKioscos');
+                    tbody.innerHTML = ''; 
+                    
+                    data.kioscos.forEach(k => {
+                        let badgeClass = '';
+                        let icono = '';
+                        let botonAccion = ''; 
+
+                        if (k.estado === 'Operativo') {
+                            badgeClass = 'bg-success';
+                            icono = '🟢 Operativo';
+                        } else if (k.estado === 'Saturado (Efectivo)') {
+                            badgeClass = 'bg-warning text-dark';
+                            icono = '💰 Bóveda Llena';
+                            botonAccion = `<button class="btn btn-xs btn-light fw-bold ms-2" style="font-size: 0.7rem;" onclick="recolectarValores(${k.id})">Recolectar</button>`;
+                        } else if (k.estado === 'Requiere Mantenimiento') {
+                            badgeClass = 'bg-danger';
+                            icono = '🔴 Mantenimiento';
+                            // NUEVO: Botón de Reabastecimiento
+                            botonAccion = `<button class="btn btn-xs btn-light fw-bold ms-2" style="font-size: 0.7rem;" onclick="reabastecerInventario(${k.id})">Reabastecer</button>`;
+                        } else {
+                            badgeClass = 'bg-danger';
+                            icono = '🔴 Desconectado';
+                        }
+                        
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>#${k.id}</td>
+                                <td class="text-start">${k.ubicacion}</td>
+                                <td>
+                                    <span class="badge ${badgeClass} w-50 py-2 shadow-sm">${icono}</span>
+                                    ${botonAccion}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar la tabla:", error);
+            }
+        }
+
+        // --- 3. GRÁFICA FINANCIERA ---
+        let miGrafica; 
+
+        async function actualizarGrafica() {
+            try {
+                const respuesta = await fetch('/api/kioscos/estado');
+                const data = await respuesta.json();
+
+                if (data.estado === "Éxito") {
+                    const etiquetas = data.kioscos.map(k => k.ubicacion);
+                    const valores = data.kioscos.map(k => k.efectivo_acumulado);
+                    const ctx = document.getElementById('graficaVentas').getContext('2d');
+
+                    if (miGrafica) { miGrafica.destroy(); }
+
+                    miGrafica = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: etiquetas,
+                            datasets: [{
+                                label: 'Efectivo Acumulado ($ MXN)',
+                                data: valores,
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: '#444' }, ticks: { color: '#fff' } },
+                                x: { ticks: { color: '#fff' } }
+                            },
+                            plugins: { legend: { labels: { color: '#fff' } } }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error en la gráfica:", error);
+            }
+        }
+
+        // --- 4. CIERRE DE TALLER ---
+        async function cerrarLoteTaller() {
+            const divMensaje = document.getElementById('mensajeTaller');
+            divMensaje.innerHTML = "<span class='text-light'>Despejando máquinas...</span>";
+            
+            try {
+                const respuesta = await fetch('/api/taller/cerrar-lote', { method: 'POST' });
+                const data = await respuesta.json();
+                
+                if(data.estado === "Éxito") {
+                    divMensaje.innerHTML = `<span class="text-success">${data.mensaje}</span>`;
+                } else if(data.estado === "Info") {
+                    divMensaje.innerHTML = `<span class="text-warning">${data.mensaje}</span>`;
+                } else {
+                    divMensaje.innerHTML = `<span class="text-danger">Error: ${data.mensaje}</span>`;
+                }
+            } catch (error) {
+                divMensaje.innerHTML = `<span class="text-danger">Error crítico en taller.</span>`;
+            }
+        }
+
+        // --- 5. RECOLECCIÓN DE VALORES ---
+        async function recolectarValores(id) {
+            if (!confirm(`¿Confirmar despacho de ruta de valores al Kiosco #${id}?`)) return;
+
+            try {
+                const respuesta = await fetch(`/api/kioscos/recolectar/${id}`, { method: 'POST' });
+                const data = await respuesta.json();
+                
+                if (data.estado === "Éxito") {
+                    alert(data.mensaje);
+                    cargarKioscos();      
+                    actualizarGrafica();  
+                } else {
+                    alert("Error: " + data.mensaje);
+                }
+            } catch (error) {
+                console.error("Error en recolección:", error);
+            }
+        }
+
+        // --- 6. REABASTECIMIENTO DE INVENTARIO (NUEVO) ---
+        async function reabastecerInventario(id) {
+            if (!confirm(`¿Confirmar ruta de logística al Kiosco #${id}? Se rellenará el stock a 50 unidades.`)) return;
+
+            try {
+                const respuesta = await fetch(`/api/kioscos/reabastecer/${id}`, { method: 'POST' });
+                const data = await respuesta.json();
+                
+                if (data.estado === "Éxito") {
+                    alert(data.mensaje);
+                    cargarKioscos(); // Actualiza la tabla para quitar la alerta roja y ponerlo verde
+                } else {
+                    alert("Error: " + data.mensaje);
+                }
+            } catch (error) {
+                console.error("Error en reabastecimiento:", error);
+            }
+        }
+
+        // --- 7. AUTO-ARRANQUE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarKioscos();
+            actualizarGrafica();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cerrajería Segura | Tienda en Línea</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilos para la línea de tiempo del rastreador */
+        .tracker-step {
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .tracker-step.active {
+            opacity: 1;
+            font-weight: bold;
+            color: #2c3e50;
+            transform: scale(1.1);
+        }
+        .tracker-icon { font-size: 1.8rem; margin-bottom: 5px; }
+        .progress-line {
+            height: 4px;
+            background-color: #dee2e6;
+            margin: 15px 0;
+            border-radius: 2px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #f39c12;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body style="background-color: #f4f6f9;">
+    <nav class="navbar navbar-dark mb-4 shadow" style="background-color: #1a252f;">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">🔑 Cerrajería Segura - Tienda Rápida</span>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 600px;">
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header text-white" style="background-color: #2c3e50;">
+                <h5 class="mb-0">🛒 Solicitar un Servicio</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Tu pedido entrará directamente a nuestra cola de producción optimizada.</p>
+                
+                <label class="form-label fw-bold">Nombre del Cliente</label>
+                <input type="text" id="clienteNombre" class="form-control mb-3" placeholder="Ej. Agencia Honda">
+                
+                <label class="form-label fw-bold">Tipo de Servicio</label>
+                <select id="servicioId" class="form-select mb-3">
+                    <option value="1">Duplicado Sencillo</option>
+                    <option value="2">Llave Auto con Chip</option>
+                    <option value="3">Cerradura Alta Seguridad</option>
+                </select>
+
+                <label class="form-label fw-bold">Urgencia</label>
+                <select id="urgencia" class="form-select mb-4">
+                    <option value="60">Express (1 Hora)</option>
+                    <option value="180">Normal (3 Horas)</option>
+                </select>
+
+                <label class="form-label fw-bold">Simulador de Pago</label>
+                <select id="estatusPago" class="form-select mb-4 border-warning">
+                 <option value="Aprobado">💳 Tarjeta de Crédito (Simular Éxito)</option>
+                 <option value="Declinado">❌ Tarjeta Bloqueada (Simular Rechazo)</option>
+                </select>
+
+                <button class="btn w-100 fw-bold shadow-sm" style="background-color: #f39c12; color: white;" onclick="enviarPedido()">Confirmar y Pagar</button>
+                
+                <div id="mensajeSalida" class="mt-3 text-center"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-header text-white" style="background-color: #1a252f;">
+                <h5 class="mb-0">📦 Rastrear mi Paquete</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="number" id="numeroOrden" class="form-control border-secondary" placeholder="Ingresa tu Número de Orden (Ej. 1)">
+                    <button class="btn btn-secondary fw-bold" onclick="rastrearPedido()">Rastrear</button>
+                </div>
+                
+                <div id="mensajeRastreo" class="text-center mb-3"></div>
+
+                <div id="contenedorTracker" style="display: none;">
+                    <div class="d-flex justify-content-between px-2">
+                        <div class="tracker-step" id="step-Pendiente">
+                            <div class="tracker-icon">📋</div>
+                            <span>Recibido</span>
+                        </div>
+                        <div class="tracker-step" id="step-Taller">
+                            <div class="tracker-icon">⚙️</div>
+                            <span>En Taller</span>
+                        </div>
+                        <div class="tracker-step" id="step-Terminado">
+                            <div class="tracker-icon">✅</div>
+                            <span>Terminado</span>
+                        </div>
+                        <div class="tracker-step" id="step-Transito">
+                            <div class="tracker-icon">🚚</div>
+                            <span>En Tránsito</span>
+                        </div>
+                        <div class="tracker-step" id="step-Entregado">
+                            <div class="tracker-icon">📦</div>
+                            <span>Entregado</span>
+                        </div>
+                    </div>
+                    <div class="progress-line">
+                        <div class="progress-fill" id="barraProgreso"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FUNCIÓN DE COMPRA (E-COMMERCE) ---
+        async function enviarPedido() {
+            const nombre = document.getElementById('clienteNombre').value || "Cliente Mostrador";
+            const servicio = document.getElementById('servicioId').value;
+            const tiempo = document.getElementById('urgencia').value;
+            const divMensaje = document.getElementById('mensajeSalida');
+
+            divMensaje.innerHTML = `<span class="text-primary">Procesando pago en pasarela... 💳</span>`;
+            
+            try {
+                const respuesta = await fetch('/api/pedidos/nuevo', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        servicio_id: parseInt(servicio),
+                        cliente_nombre: nombre,
+                        fecha_entrega_minutos: parseFloat(tiempo),
+                        estatus_pago: document.getElementById('estatusPago').value
+                    })
+                });
+                const data = await respuesta.json();
+                
+                if (data.estado === "Éxito") {
+                    divMensaje.innerHTML = `<div class="alert alert-success mt-2"><b>¡Compra exitosa!</b> ${data.mensaje} <br><small>Usa tu número de orden para rastrear el paquete abajo.</small></div>`;
+                } else {
+                    divMensaje.innerHTML = `<div class="alert alert-danger mt-2"><b>Pago Declinado:</b> ${data.mensaje}</div>`;
+                }
+            } catch (error) {
+                divMensaje.innerHTML = `<div class="alert alert-danger mt-2">Error de conexión con el servidor.</div>`;
+            }
+        }
+
+        // --- FUNCIÓN DE RASTREO (LOGÍSTICA ÚLTIMA MILLA) ---
+        async function rastrearPedido() {
+            const idOrden = document.getElementById('numeroOrden').value;
+            const divMensaje = document.getElementById('mensajeRastreo');
+            const tracker = document.getElementById('contenedorTracker');
+            const barra = document.getElementById('barraProgreso');
+            
+            if (!idOrden) {
+                divMensaje.innerHTML = `<span class="text-danger fw-bold">Por favor ingresa un número de orden.</span>`;
+                return;
+            }
+
+            divMensaje.innerHTML = `<span class="text-secondary">Buscando en la red logística... 📡</span>`;
+            tracker.style.display = 'none'; // Ocultar mientras carga
+
+            try {
+                const respuesta = await fetch(`/api/rastreo/${idOrden}`);
+                const data = await respuesta.json();
+
+                if (data.estado === "Éxito") {
+                    divMensaje.innerHTML = `<h6 class="text-success fw-bold">Cliente: ${data.cliente} | Estatus: ${data.estatus_actual}</h6>`;
+                    tracker.style.display = 'block'; // Mostrar la línea de tiempo
+
+                    // Reiniciar visuales
+                    document.querySelectorAll('.tracker-step').forEach(el => el.classList.remove('active'));
+                    
+                    // Lógica de llenado de la barra según el estatus
+                    let porcentaje = "0%";
+                    let estatus = data.estatus_actual;
+
+                    if (estatus === "Pendiente") {
+                        document.getElementById('step-Pendiente').classList.add('active');
+                        porcentaje = "0%";
+                    } else if (estatus === "En Taller" || estatus === "Fabricando") {
+                        document.getElementById('step-Pendiente').classList.add('active');
+                        document.getElementById('step-Taller').classList.add('active');
+                        porcentaje = "25%";
+                    } else if (estatus === "Terminado") {
+                        document.getElementById('step-Pendiente').classList.add('active');
+                        document.getElementById('step-Taller').classList.add('active');
+                        document.getElementById('step-Terminado').classList.add('active');
+                        porcentaje = "50%";
+                    } else if (estatus === "En Tránsito") {
+                        document.getElementById('step-Pendiente').classList.add('active');
+                        document.getElementById('step-Taller').classList.add('active');
+                        document.getElementById('step-Terminado').classList.add('active');
+                        document.getElementById('step-Transito').classList.add('active');
+                        porcentaje = "75%";
+                    } else if (estatus === "Entregado") {
+                        document.querySelectorAll('.tracker-step').forEach(el => el.classList.add('active'));
+                        porcentaje = "100%";
+                    } else {
+                        // Por si el algoritmo le asignó un estatus intermedio
+                        document.getElementById('step-Pendiente').classList.add('active');
+                        porcentaje = "10%";
+                    }
+
+                    // Animar la barra
+                    setTimeout(() => { barra.style.width = porcentaje; }, 100);
+
+                } else {
+                    divMensaje.innerHTML = `<span class="text-danger fw-bold">${data.mensaje}</span>`;
+                }
+            } catch (error) {
+                divMensaje.innerHTML = `<span class="text-danger">Error al conectar con la base de datos.</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
