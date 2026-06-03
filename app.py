@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = 'erp_seguridad_b2_c1_super_secreta'
 
 # Configuramos la conexión a tu base de datos Docker
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://isai_admin:TU_CONTRASEÑA@mysql-isai.alwaysdata.net/isai_cerrajeria_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://isai_admin:G0m3z01Admin123@mysql-isai.alwaysdata.net/isai_cerrajeria_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Vinculamos la base de datos al servidor
